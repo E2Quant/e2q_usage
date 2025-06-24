@@ -1,0 +1,174 @@
+#---------------------
+#  MA function
+# arg:
+#   timeperiod 周期
+#   current_close 
+#   _size
+# decs:
+#   Moving average
+#   https://en.wikipedia.org/wiki/Moving_average
+#   simple moving average
+#---------------------
+func MA(timeperiod, current_val){
+    _arr_size = 2;
+
+# 保存 上一次的总和
+    _cur_id = FStoreId();
+    FArray(_cur_id, _arr_size);
+
+    sum_val = FArrayGet(_cur_id, 0);
+
+# 保存 val 的数组
+    _val_id = FStoreId();
+    val_len = timeperiod + 1;
+# log(_val_id);
+    FArray(_val_id, val_len);
+
+# 保存返回值
+    _ret_id = FStoreId(); 
+    FArray(_ret_id, _arr_size);
+    FArrayFixed(_ret_id);
+
+    check = (timeperiod == 0) || (current_val == 0); 
+    if ( check ) {
+# 因为不能放在 if 中运行，但又得申请 id，所以只好这样退出了
+        return _ret_id;
+    }
+
+# --- 数组
+    size = FArraySize(_val_id);
+
+ 
+    stat = FArrayGet(IBarStatus.id, 0);
+
+    if (size == 0) {
+        FArrayAdd(_val_id,  current_val);         
+        FArrayAdd(_cur_id, 0);
+
+        return;          
+    }
+    if(stat != UBool.B_FALSE){
+        FArrayAdd(_val_id,  current_val);    
+
+        FArrayAdd(_cur_id, 0);
+    }else{
+        usize = size - 1;
+
+        FArrayUpdate(_val_id, usize, current_val);
+    }
+# --- end
+
+# === 计算值
+
+    if(size < timeperiod){
+
+        FArrayUpdate(_ret_id, 0, 0);
+
+        sum_val = sum_val + current_val;        
+    }else{
+        FArrayUpdate(_ret_id, 0, 1);
+        previous_close = 0;
+
+        if(size == val_len){
+            previous_close = FArrayGet(_val_id, 0);            
+        }
+
+        sum_val = sum_val + current_val - previous_close;
+        ret =  sum_val / timeperiod ;
+
+        FArrayUpdate(_ret_id, 1, ret);
+    }
+
+    FArrayUpdate(_cur_id, 1, sum_val);
+
+# === end
+
+    return _ret_id;
+}
+
+
+#---------------------
+#  EMA function
+# arg:
+#   timeperiod 周期
+#   current_val 
+#   _size
+# decs:
+#   Exponential  Moving average
+#   https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential
+#   Initial SMA: 10-period sum / 10 
+#   Multiplier: (2 / (Time periods + 1) ) = (2 / (10 + 1) ) = 0.1818 (18.18%)
+#   EMA: {Close - EMA(previous day)} x multiplier + EMA(previous day). 
+#---------------------
+func EMA(timeperiod , current_val){
+    _arr_size = 2;
+
+    _ema_id = FStoreId();    
+    FArray(_ema_id, _arr_size);
+    _pre_ema = FArrayGet(_ema_id, 0);
+
+    _ret_id = FStoreId(); 
+    FArray(_ret_id, _arr_size);
+
+    stat = FArrayGet(IBarStatus.id, 0);
+
+    value = current_val;
+    if (_pre_ema > 0) {
+        value = 0;
+    }
+
+    _ma_id = MA(timeperiod, value);  
+
+    if (timeperiod == 0) {
+# 因为不能放在 if 中运行，但又得申请 id，所以只好这样退出了
+        return _ret_id ;
+    }
+
+# ==== 计算 
+
+    _ret = 0;
+
+    if(_pre_ema == 0) {
+        FArrayUpdate(_ret_id, 0, 0);
+
+        _ma_ret = FArrayGet(_ma_id, 0);
+
+        if(_ma_ret == 0){
+            return _ret_id;
+        }
+        _ret = FArrayGet(_ma_id, 1);
+
+    }
+    if (_ret > 0) {
+        if(stat != UBool.B_FALSE){
+            FArrayAdd(_ema_id, 0);
+        }        
+    }
+
+    if(_pre_ema > 0){
+
+        if(stat != UBool.B_FALSE){
+            FArrayAdd(_ema_id, 0);
+        }
+
+        FArrayUpdate(_ret_id, 0, 1);
+        _tper = timeperiod + 1;
+        _mul = 2 / _tper;
+
+        _ema = current_val - _pre_ema;
+        _ema_m = _ema * _mul;
+        _ret = _ema_m + _pre_ema;
+    }
+
+# === end
+
+    FArrayUpdate(_ema_id, 1, _ret);
+
+    FArrayUpdate(_ret_id, 1, _ret);       
+
+    return _ret_id;
+}
+
+
+
+

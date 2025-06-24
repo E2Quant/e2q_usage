@@ -1,0 +1,40 @@
+#------------
+#
+# union struct
+#
+#------------
+
+#----------
+# Order
+#---------
+
+#--------
+# Name: IOrder
+# Description: 
+#  
+#--------	
+union IOrder{
+    pass=0;
+    long=1; 
+    short=2;
+}
+#----- union end
+
+#----------
+# 全局变量
+#---------
+
+#--------
+# Name: Ima
+# Description: 
+#  
+#--------	
+union Ima{
+    ma_fast=5;
+    ma_slow=8;
+}
+#----- union end
+
+
+
+

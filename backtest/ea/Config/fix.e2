@@ -1,0 +1,79 @@
+
+#------------
+#
+#  fix node function
+#
+#------------
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func Postion() {
+
+    isPost = (IThreadNum.thread_num > 1) && (IThreadNum.thread_postion != 0); 
+    if( isPost ){
+# 设置各个线的仓位
+##  平分不同的线程
+        all = 100;
+        pos =  all / IThreadNum.thread_num;
+# 取整数 
+        fpos = FFloor(pos);
+        
+        FThreadPosition(0, 25);
+        FThreadPosition(1, 75);
+        
+    }
+}
+#----- func end
+
+#--------
+# Name: ProcCfi
+#   Parameters:
+# - pid:  进程 id
+# -> return 
+# Description: 
+#--------	
+func ProcCfi(process_id) {
+
+    Postion();
+
+    FSetCash(IAccountCash.cash);      
+}
+#----- func end
+
+#---------------------
+#  fix cfg
+#---------------------
+
+#--------
+# Name:  ea_config
+#   Parameters:
+# -> return 
+# Description: 
+#  全局配置
+#--------	
+
+func ea_config(){
+    _scfg = "/opt/e2q/cfg/tradeclient.cfg";
+    FFix(_scfg); 
+
+    _sbroker="kafkaserver:9092";
+    _ltopic="e2l-log"; 
+
+    FMkkf(_sbroker);
+    FTopicLog(_ltopic);
+
+# 设置 offers
+    FOffers(UOffers.OF_Index);
+# gmt
+    FGmt();
+
+}
+#----- func end
+

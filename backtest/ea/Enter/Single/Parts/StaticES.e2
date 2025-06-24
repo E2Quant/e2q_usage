@@ -1,0 +1,28 @@
+
+#--------
+# Name: union
+# Description: 
+# thread_postion > 0 && thread_num > 1
+#  才会分配不同的仓位
+#--------	
+union IThreadNum{
+    thread_num = 1;
+    thread_postion = 1;
+    risk_postion = 0;
+
+}
+#----- union end
+
+#--------
+# Name: union
+# Description: 
+# # 100 万，最少值 1 万 
+# OrderPostion = 0 # 剩余的金额划分
+#              = 1 # 当前拥有的金额划分
+#--------	
+union IAccountCash {
+    cash = 100;	
+
+    OrderPostion = 0;
+}
+#----- union end

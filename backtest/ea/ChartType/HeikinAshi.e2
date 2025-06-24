@@ -1,0 +1,200 @@
+#---------------------
+#  Heikin-Ashi Candlesticks function
+# arg:
+#   open
+#   high
+#   low
+#   close
+# desc:
+#   https://school.stockcharts.com/doku.php?id=chart_analysis:heikin_ashi
+#  
+#--------	
+
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func GetHA(idx,field) {
+    id = IHeikin.id;
+
+    size = 4;
+    _idx = size * idx + field;
+    val = FArrayGet(id,_idx);
+    return val;
+}
+#----- func end
+
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func GetHAOpen(now) {
+    val = GetHA(now, IHeikin.open);
+    return val; 
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func GetHALow(now) {
+    val = GetHA(now, IHeikin.low);
+    return val;
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func GetHAHigh(now) {
+    val = GetHA(now, IHeikin.high);
+    return val;
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func GetHAClose(now) {
+    val = GetHA(now, IHeikin.close);
+    return val;
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+
+func Heikin(open,high,low,close){
+    id = IHeikin.id;
+    FArray( id, IHeikin.size); 
+    bar_len = 4;
+    size = FArraySize(id);
+
+    idx_open = IHeikin.open + bar_len;
+    idx_low = IHeikin.low + bar_len;
+    idx_high = IHeikin.high + bar_len;
+    idx_close = IHeikin.close + bar_len;
+
+    offset = 0;
+# 前一个值
+    ha_open_pre = 0;
+    ha_close_pre = 0;
+
+    ha_open = 0;
+    ha_high = 0;     
+    ha_low = 0;     
+
+    ha_close = (open + high + low + close) /4;
+
+# 初始化
+    if(size == 0){
+        for (a=0;a<bar_len;a++) {
+            FArrayAdd(id,  open);
+        }
+    }
+# 有两个以上的值才能取前一个值
+    bars = bar_len * 2;
+    if (size >= bars) {
+        ha_open_pre = GetHAOpen(offset);
+        ha_close_pre = GetHAClose(offset);           
+    }
+
+    if(ha_open_pre == 0){
+
+        ha_high = high;     
+        ha_low = low;     
+        ha_open = open;     
+
+    }else{
+
+# 采用前一个的来计算当前开盘价
+        ha_open =( ha_open_pre + ha_close_pre ) /2;
+
+        ha_high = FMaxs(ha_close, ha_open, high);
+        ha_low = FMins( ha_close, ha_open, low); 
+    }
+
+    stat = FArrayGet(IBarStatus.id, 0);
+    if (stat != UBool.B_FALSE ) {
+        size = FArraySize(id);
+
+        for (a=0;a<bar_len;a++) {
+            FArrayAdd(id,  ha_open);        
+        }
+    }
+
+    FArrayUpdate(id, idx_low, ha_low);
+    FArrayUpdate(id, idx_high, ha_high);
+    FArrayUpdate(id, idx_close, ha_close);
+}
+#----- func end
+
+
+
+
+#------------ test code  -------------------#
+
+
+#---------------------
+# ha chart type bar function
+#---------------------
+func ha(){
+    FPrintLine(9);
+    dtime = FTime(ISymbols.index , UTimeFrames.Period_H1, 1); 
+    FPrintTime(dtime);
+
+    index=1;
+    code =  CfiCode( ) ;
+    FBar(code , UTimeFrames.Period_H1, index);
+
+    open = FBarSeries(UBarType.MODE_OPEN);
+    high = FBarSeries(UBarType.MODE_HIGH);
+    low = FBarSeries(UBarType.MODE_LOW);
+    close = FBarSeries(UBarType.MODE_CLOSE);
+
+    echo(open);
+    echo(high);
+    echo(low);
+    echo(close);
+
+    Heikin(open, high, low, close);
+}
+
+

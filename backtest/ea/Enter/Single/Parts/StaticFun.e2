@@ -1,0 +1,19 @@
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func ESConfig(tick_size, thread_id) {
+
+    tf = UTimeFrames.Period_D1;
+    InitTFrame(tick_size, tf);
+
+    idx = thread_id+1;
+
+    FStore(ISymbols.id, idx);
+}
+#----- func end

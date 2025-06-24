@@ -1,0 +1,70 @@
+
+#--------
+# Name: bollinger
+#   Parameters:
+# - period: 参数 
+# - dev:默认为 2
+# - val: 数值 
+# -> return 
+# Description: 
+# BBANDS               Bollinger Bands
+# https://en.wikipedia.org/wiki/Bollinger_Bands
+#  https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth 
+#--------	
+
+func BOLLINGER(period,  dev,  value ){
+    _arr_size = 4;
+    _arr_id = FStoreId(); 
+
+# 保存 返回值
+    _ret_id = FStoreId();
+    _ma_id = MA(period, value);
+
+    FArray(_ret_id, _arr_size);
+
+    FArray(_arr_id, period);    
+
+    if (period == 0) {
+# 因为不能放在 if 中运行，但又得申请 id，所以只好这样退出了
+        return _ret_id ;
+    }
+
+    
+    stat = FArrayGet(IBarStatus.id, 0);
+
+    if(stat != UBool.B_FALSE){
+        FArrayAdd(_arr_id, 0);
+    }
+    size = FArraySize(_arr_id);
+
+    idx = size - 1;
+    if (size == 0) {
+        idx = 0;
+    }
+    FArrayUpdate(_arr_id, idx, value);
+
+    _ma_ret = FArrayGet(_ma_id, 0);
+
+    if(_ma_ret == 0){
+        FArrayUpdate(_ret_id, 0, 0);
+        return _ret_id;
+    }
+
+    _stdev = FStdev(_arr_id);
+    stdev = _stdev * dev;
+
+    middle = FArrayGet(_ma_id, 1);
+
+    upper = middle + stdev;
+    lower = middle - stdev;
+
+    FArrayUpdate(_ret_id, 0, 1);
+    FArrayUpdate(_ret_id, 1, upper);
+    FArrayUpdate(_ret_id, 2, middle);
+    FArrayUpdate(_ret_id, 3, lower);
+
+    return _ret_id;
+}
+#----- func end
+
+

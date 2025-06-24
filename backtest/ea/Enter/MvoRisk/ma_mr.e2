@@ -1,0 +1,30 @@
+import <Enter/MvoRisk/Parts/StaticMR.e2>
+
+import <Physical/ModeConfig/ma_enter.e2> 
+
+import <Enter/MvoRisk/Parts/StaticMrFun.e2>
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func ma_mr(tick_size, thread_id) {
+    ESConfig(tick_size, thread_id);
+
+    ma_enter(tick_size, thread_id);   
+
+    AdjPrice( thread_id ); 
+
+}
+#----- func end
+
+#----
+#  mail call enter
+#----
+
+ma_mr(__arg0, __arg1);

@@ -1,0 +1,95 @@
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  记录报告 
+#--------	
+func ReportAnaly( value, vtype, key ) {
+
+    time = FTimeCurrent();
+
+    FAnalseLog(key, value, vtype , time);
+
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  仓位的变化 
+#--------	
+func ReportFormula(ticket, value) {
+    alt_id = IAnalseLogType.order_formula;
+    ReportAnaly( value, alt_id, ticket) ; 
+}
+#----- func end
+
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func ReportAdjPrice(cficode, value ) {
+    vtype = IAnalseLogType.adj_price;
+    ReportAnaly( value, vtype, cficode ) ; 
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func AdjPrice( thread_id ) {
+
+    stat = FArrayGet(IBarStatus.id, 0);
+
+    if (stat != UBool.B_FALSE) {
+        timeframe =  CurrentTFrame() ;
+
+        code_len = FSymbols();
+
+        ct = (code_len == 1 ) && (thread_id == 0);
+        co = code_len > 1;
+
+        check = ct || co;    
+        if(check){
+            code = CfiCode() ; 
+            adj_close_p = FAdjClose(code , timeframe, 1);
+            if (adj_close_p > 0) {
+                ReportAdjPrice(code, adj_close_p ) ;
+            }
+        }
+
+        isOne = FProcessRuns();
+        check = (thread_id == 0) && (isOne == 0);
+        if (check) {
+            index = 0;
+            close_index = FClose(index, timeframe, 1);
+            if (close_index > 0) {
+                ReportAdjPrice(index, close_index ); 
+            }
+
+        }
+
+    }
+    return 0 ;
+}
+#----- func end

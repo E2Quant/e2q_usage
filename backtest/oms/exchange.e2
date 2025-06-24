@@ -1,0 +1,148 @@
+#------------
+#
+# exchange e2l 
+#
+# 配置
+#------------
+
+#---------------------
+# kafka data 
+#---------------------
+func kafka_data(){
+    # 请按 kafka 的地址填写
+    # _sbroker="127.0.0.1:9092"; 
+    _sbroker="kafkaserver:9092";
+
+    _stopic="fix-events";
+    _ltopic="e2l-log"; 
+
+#-------
+# 源数据作为周期的一个单位
+#-------
+
+    FMkkf(_sbroker);
+    FTopicTick(_stopic);
+    FTopicLog(_ltopic);
+
+    FMkType(UMKType.Mk_Bar); 
+}
+
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  A  股票 交易的配置 
+#--------	
+func Astock() {
+#---------- 
+#
+#交易时ddf
+# sz sh
+#  '上午 09:30——11:30'
+#  '下午 13:00——15:00'
+#
+#  hk 
+#  '下午 15:05——15:30'
+#----------
+
+    FTradeTime(9,30,11,30);
+    FTradeTime(13,0,15,0);
+
+
+
+# 设置成观察者模式
+#    FSettlInst(USettleInstMode.S_Observer);
+# 结算模式，但余额不再增加
+    FSettlInst(USettleInstMode.S_Settle);
+
+#default day
+# ioc 
+    FTimeInForce(UTimeInForce.Tif_Immediate_Or_Cancel); 
+
+    _sccy="rmb";
+    _ncms = 0.01;
+
+    FCommission(_ncms, _sccy);
+
+# 由kafka 控制 offer time
+#FOfferTime(100);
+#--------------------
+#   只能做多
+#--------------------
+    FTradeMode(USymbolTradeMode.M_LongOnly);
+
+    FMatchEventInit(UMatchEvent.ME_Close);    
+
+
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  btcusdt
+#--------	
+func htx() {
+
+#  24 小时 交易的多周期时间
+#
+    FTradeTime(0,0,23,59);
+
+# T + 0
+    FSettlement(0);
+# 结算模式，但余额不再增加
+    FSettlInst(USettleInstMode.S_Settle);
+
+# ioc 
+    FTimeInForce(UTimeInForce.Tif_Immediate_Or_Cancel); 
+
+# https://api.huobi.pro/v1/settings/common/market-symbols?symbols=btcusdt
+# "minoa": 0.0001
+    lot = 0.0001;
+    FLotAndShare(lot);
+
+    hccy="usdt";
+    _ncms = 0.01;
+
+    FCommission(_ncms, hccy);
+
+#--------------------
+#   做多做空
+#--------------------
+
+    FTradeMode(USymbolTradeMode.M_LongOnly);
+
+    FMatchEventInit(UMatchEvent.ME_OrderIn);
+}
+#----- func end
+
+
+
+
+#---------------------
+# fix config 
+#---------------------
+func config(){
+    _scfg="/opt/e2q/cfg/executor.cfg";
+    FFix(_scfg);
+
+    kafka_data();
+    Astock() ;
+#    htx();
+
+
+    # save in db table trade_info
+    major = 1;
+    minor = 3;
+    patch = FProcessRuns();
+    FQuantVersion(major,minor,patch);
+}
+

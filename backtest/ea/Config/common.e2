@@ -1,0 +1,124 @@
+#------------
+#
+# common function
+#
+#------------
+
+#---------------------
+#  BarUpdate function
+#---------------------
+#--------
+# Name:BarUpdate
+#   Parameters:
+# - val: bar 的周期 
+# -> return 
+# Description: 
+#   是不是另起一个周期了
+#--------	
+
+func BarUpdate(val){
+
+    FArray(IBarStatus.id, IBarStatus.size);
+    FArrayFixed(IBarStatus.id); 
+
+    _old_val = FArrayGet(IBarStatus.id, 1);
+
+    FArrayUpdate(IBarStatus.id, 1, val);
+
+    if(_old_val != val){
+        FArrayUpdate(IBarStatus.id, 0, UBool.B_TRUE);
+    }else{
+        FArrayUpdate(IBarStatus.id, 0, UBool.B_FALSE);
+    }
+
+    return 0;
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func BarTimeFrame( tt ) {
+    FArray(IBarStatus.id, IBarStatus.size);
+    FArrayFixed(IBarStatus.id); 
+    idx = 2;
+    FArrayUpdate(IBarStatus.id, idx , tt);
+}
+#----- func end
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  设置 5 分钟 周期  
+#--------	
+func InitTFrame(tick_size, tf) {
+
+    if (tick_size == 0) {
+        BarTimeFrame( tf );           
+    } 
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  当前的周期 
+#--------	
+func CurrentTFrame() {
+    idx = 2;
+    tt = FArrayGet(IBarStatus.id , idx);
+    if (tt == 0) {
+        tt = UTimeFrames.Period_D1;
+    }
+
+    return tt;
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#   ProcessInitData use init time frame 
+#--------
+func PFrame(){
+
+    tframe =  CurrentTFrame() ; 
+
+    FTFrame(tframe);
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func CfiCode() {
+
+    idx = FFetch(ISymbols.id);
+    cfi_base = FCFICode(idx); 
+
+    return cfi_base;
+}
+#----- func end

@@ -1,0 +1,311 @@
+import <Config/base_union.e2>
+import <Config/StaticStoreId.e2>
+import <Config/common.e2>
+import <Config/fix.e2>
+
+import <Indicators/Math/cross.e2>
+import <Indicators/OverlapStudies/MA.e2>
+import <Physical/ModeGuide/ReportAnalyse.e2>
+import <control/Order.e2>
+
+#
+# 进程 和线程的选择
+#
+
+#--------
+# Name: ModeThreadNum
+#   Parameters:
+# - size: 生成多少组参数, 其实就是多少组线程
+# - init_id: 参数初始值数组 id
+# - step: 参数步长 
+# -> return 
+# Description: 
+#  
+#--------	
+
+func ModeThreadNum(size, init_id, step){
+    _num_id = IModeTread.thread_num_id ;
+
+    if (size == 0) {
+
+        return -1;
+    }
+
+# 每组有多少个参数
+    number = FArrayLength(init_id); 
+
+    if (number == 0) {
+# 如果 不需要参数 就这样写吧
+        FArray(_num_id, 1);
+        FArrayShare(_num_id);
+        FArrayFixed(_num_id);
+        FArrayUpdate(_num_id, 0 , 1);
+
+        return -1;
+    }
+    if (number <= 1) {
+        number = 2;
+    }
+# 第一位是 init_id
+    length = size * number + 1;
+
+    FArray(_num_id, length);
+
+    FArrayShare(_num_id);
+    FArrayFixed(_num_id);
+    FArrayUpdate(_num_id, 0 , number);
+
+    idx = 1;
+    if (IModeTread.random == 0) {
+        inc_step = 0;
+        for (a=0;a<size;a++) {
+
+            for (b=0;b<number;b++) {
+                value = FArrayGet(init_id, b);         
+                ret_value = value + inc_step;
+                FArrayUpdate(_num_id, idx, ret_value);            
+                idx++;
+            } 
+
+            inc_step = inc_step + step;
+        }       
+    }else{
+        pid = FProcessId();
+        run = FProcessRuns();
+
+        value = FArrayGet(init_id, 0);
+        step = step + run;
+
+        FArrayUpdate(_num_id, idx, value);
+
+        len = size * number; 
+
+        for (a=idx;a<len;a++) {
+            new_value = value + step * a;    
+
+            nidx = a + 1;    
+            FArrayUpdate(_num_id, nidx, new_value);
+        }
+
+    } 
+
+    return 0;
+}
+#----- func end
+
+
+
+#--------
+# Name:PData
+#   Parameters:
+# -> return 
+# Description: 
+#  
+#--------	
+func PData(  ){
+    FArray(IPhyIds.data_id, IPhyIds.data_size);
+    timeframe =  CurrentTFrame() ;
+    FArrayAdd(IPhyIds.data_id, timeframe); 
+}
+#----- func end
+
+#--------
+# Name: InitThreadArg
+#   Parameters:
+# - mid: IModeSelect id
+# - size : 5
+# - step : 3
+# - ext_date : FALSE 不加载，TURE 加载额外数据
+# -> return 
+# Description: 
+#  
+#--------	
+
+func InitThreadArg(mod_id, step, ext_data){
+    size = (IThreadNum.thread_num + 1) * 2;
+
+    if (ext_data == UBool.B_TRUE) {
+        PData();           
+    }
+
+    ModeThreadNum(size, mod_id, step);
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func AdjAverage(price) {
+    FArray(ITradeLoss.risk_min_max, ITradeLoss.risk_mm);
+    if (price == 0) {
+        return 0;
+    }
+    stat = FArrayGet(IBarStatus.id, 0);
+    if(stat != UBool.B_FALSE){
+        FArrayAdd(ITradeLoss.risk_min_max, price);
+        FArrayAdd(ITradeLoss.risk_min_max, price);
+    }
+
+    low  =  FArrayGet(ITradeLoss.risk_min_max, 2);
+    high  =  FArrayGet(ITradeLoss.risk_min_max, 3);
+    if ( low > price) {
+        FArrayUpdate(ITradeLoss.risk_min_max, 2, price); 
+    }
+    if (high < price ) {
+        FArrayUpdate(ITradeLoss.risk_min_max, 3, price); 
+
+    }
+    pre_low  =  FArrayGet(ITradeLoss.risk_min_max, 0);
+    pre_high  =  FArrayGet(ITradeLoss.risk_min_max, 1);
+
+    avg = (pre_low + pre_high) / 2;
+    return pre_high;
+}
+#----- func end
+
+
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#   在这儿做点风控什么的
+#--------	
+func PRisk() {
+    return 0;
+}
+#----- func end
+
+
+#--------
+# Name:PTrade
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+
+func PTrade(order_signal, pclose ){
+
+    oe = UOrderEvent.Oe_Compleate;
+
+    ticket = CurrentTicket() ;
+
+    risk = PRisk();
+
+
+    if (risk > 0) {
+        oe = UOrderEvent.Oe_TakeProfit;                
+    }
+    else{
+        oe = UOrderEvent.Oe_StopLoss;
+    }
+
+
+    if(order_signal == IOrder.long){
+        Buy(pclose);
+    }else{
+
+        Sell(ticket, pclose, oe);
+    } 
+
+
+    return 1;
+}
+#----- func end
+
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func ProcessInitData( pid, mod_id,  step, ext_data) {
+    _nscript=FIsInit();
+    _ok = UBool.B_TRUE;
+#-------------------
+# script machine init
+#-------------------
+    if(_nscript == UInitOk.I_Proc){  
+        ProcCfi( pid ); 
+
+        PFrame();
+
+        ea_config();  
+        FVersion();                                 
+
+        if (mod_id > 0) {
+            InitThreadArg(mod_id, step, ext_data);            
+        }
+
+# thread number
+        size = IThreadNum.thread_num;
+        FThread(size);
+        _ok = UBool.B_FALSE;
+
+    } else{
+        code =  CfiCode( ) ;
+        timeframe =  CurrentTFrame() ;
+        size = FBarSize(code , timeframe);
+
+        BarUpdate(size);
+    } 
+
+    return _ok;
+}
+#----- func end
+
+
+
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func ShowDayInfo() {
+    code = CfiCode() ; 
+
+    timeframe =  CurrentTFrame() ;
+
+    stat = FArrayGet(IBarStatus.id, 0);
+    deci = 3;
+
+    if (stat != UBool.B_FALSE) {
+
+        FBar(code ,timeframe , 1);
+        ptime = FBarSeries(UBarType.MODE_TIME);
+        now_open = FBarSeries(UBarType.MODE_OPEN );
+        now_low = FBarSeries(UBarType.MODE_LOW );
+        now_high = FBarSeries(UBarType.MODE_HIGH );
+        now_close = FBarSeries(UBarType.MODE_CLOSE );
+
+
+        FPrintTime(ptime);                 
+        FPrintDeci(now_open,deci);
+        FPrintDeci(now_low,deci);
+        FPrintDeci(now_high,deci);
+        FPrintDeci(now_close,deci);
+    }
+
+}
+#----- func end

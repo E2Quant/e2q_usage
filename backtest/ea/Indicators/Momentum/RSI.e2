@@ -1,0 +1,152 @@
+#---------------------
+# rsi function
+# RSI - Relative Strength Index
+# https://en.wikipedia.org/wiki/Relative_strength_index
+#---------------------
+
+#--------
+# Name:Average
+#   Parameters:
+# - timeperiod: 参数
+# - value: 数值
+# -> return 
+# Description: 
+#  
+#--------	
+func Average(timeperiod, value) {
+    _rs_id = FStoreId();
+
+    check = (timeperiod == 0) || (value == 0); 
+    if (check) {
+# 因为不能放在 if 中运行，但又得申请 id，所以只好这样退出了
+        return  _rs_id;
+    }
+
+    _ret = 0;
+    length = timeperiod - 1;
+    avg_time = timeperiod + 1;
+
+    rs_size = 4;
+
+    stat = FArrayGet(IBarStatus.id, 0);
+
+    FArray(_rs_id, rs_size);
+    FArrayFixed(_rs_id);
+
+    deci = 2;
+
+    valued = FArrayGet(_rs_id, 2);
+    size = FArrayGet(_rs_id, 3);
+    if (size == 0) {
+        size = 1;
+    } 
+
+    if(stat != UBool.B_FALSE){
+        valued = FArrayGet(_rs_id, 1);        
+        FArrayUpdate(_rs_id, 2, valued);
+
+        size++;
+        FArrayUpdate(_rs_id, 3, size);
+    }
+
+    FArrayUpdate(_rs_id, 0, 1);
+
+    if (size < avg_time) {               
+
+        sum_val = valued + value;
+        FArrayUpdate(_rs_id, 1, sum_val);
+
+        FArrayUpdate(_rs_id, 0, 0);
+    }
+
+    if (size == avg_time) {
+        avg_first = valued / timeperiod;
+        FArrayUpdate(_rs_id, 1, avg_first);
+    }
+
+    if (size > avg_time) {
+
+        avg_next = (valued  * length + value) /timeperiod;
+        FArrayUpdate(_rs_id, 1, avg_next);
+    }
+
+    return _rs_id;   
+}
+#----- func end
+
+#--------
+# Name:RSI
+#   Parameters:
+# - timeperiod: 参数
+# - current_value: 当前值
+# - pre_value: 上一个值
+# -> return 
+# Description: 
+#  RS = Average Gain / Average Loss
+#  RSI = 100 - 100 / ( 1 + RS ) 
+#--------	
+
+func RSI(timeperiod , current_value, pre_value){
+    _ret_id = FStoreId();
+    FArray(_ret_id, 2);
+    FArrayFixed(_ret_id);
+
+    val_gain = 0;
+    val_loss = 0;
+
+    if(pre_value <= 0){
+        FArrayUpdate(_ret_id, 0, 0);        
+    }else{
+# 给数组填充数值
+        if(current_value > pre_value){
+            val_gain = current_value - pre_value;
+        }else{
+            val_loss = pre_value - current_value;
+        }
+
+    }
+
+    gain_id = Average( timeperiod , val_gain);
+    loss_id = Average( timeperiod , val_loss);
+
+    if (timeperiod == 0) {
+# 因为不能放在 if 中运行，但又得申请 id，所以只好这样退出了
+        return _ret_id ;
+    }
+
+    ret = FArrayGet(gain_id, 0);
+    if (ret == 0) {
+        FArrayUpdate(_ret_id, 0, 0);
+        return _ret_id;
+    }
+    avg_gain = FArrayGet(gain_id, 1);    
+    if (avg_gain == 0) {
+        FArrayUpdate(_ret_id, 0, 1);
+        FArrayUpdate(_ret_id, 1, 0);
+
+        return _ret_id; 
+    }
+
+    avg_loss = FArrayGet(loss_id, 1);
+
+    if (avg_loss == 0) {
+        FArrayUpdate(_ret_id, 0, 1);
+        FArrayUpdate(_ret_id, 1, 100);
+
+        return _ret_id;
+
+    }
+
+    RS = avg_gain / avg_loss;
+    rs_0 = RS + 1;
+    rsi_value = 100 - (100 / rs_0);
+
+    FArrayUpdate(_ret_id, 0, 1);
+    FArrayUpdate(_ret_id, 1, rsi_value);
+
+    return _ret_id;
+
+}
+#----- func end
+
+

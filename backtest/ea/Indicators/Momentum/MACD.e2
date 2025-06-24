@@ -1,0 +1,59 @@
+#---------------------
+# macd function
+# MACD - Moving Average Convergence/Divergence oscillator (MACD)
+#
+# MACD Line: (fast-day EMA - slow-day EMA)
+#
+# Signal Line: signal-day EMA of MACD Line
+#
+# MACD Histogram: MACD Line - Signal Line
+#---------------------
+
+func MACD(fast, slow, signal,  value){
+    size = 4;
+    _macd_id = FStoreId();
+    FArray(_macd_id, size);
+
+    _fast_ema_id = EMA(fast, value);
+    _slow_ema_id = EMA(slow, value);
+
+    _ema_ret = FArrayGet(_slow_ema_id, 0); 
+
+    if(_ema_ret == 0){
+        FArrayUpdate(_macd_id, 0, 0);
+        return _macd_id;
+    } 
+
+    fast_ema = FArrayGet(_fast_ema_id, 1);
+    slow_ema = FArrayGet(_slow_ema_id, 1);
+    
+    macd_line = fast_ema - slow_ema;
+    sig_line_id = MA(signal, macd_line );
+
+    if (fast == 0) {
+# 因为不能放在 if 中运行，但又得申请 id，所以只好这样退出了
+        return _macd_id ;
+    }
+
+    _sig_ret = FArrayGet(sig_line_id, 0);
+
+    if(_sig_ret == 0){
+        FArrayUpdate(_macd_id, 0, 0);
+        return _macd_id;
+    }
+
+    FArrayUpdate(_macd_id, 0, 2);
+    FArrayUpdate(_macd_id, 1, macd_line);
+
+    sig_line = FArrayGet(sig_line_id, 1); 
+    FArrayUpdate(_macd_id, 2, sig_line);
+
+    Histogram = macd_line - sig_line;
+    FArrayUpdate(_macd_id, 3, Histogram);
+
+
+    return _macd_id;
+}
+
+
+

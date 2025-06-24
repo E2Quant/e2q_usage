@@ -1,0 +1,215 @@
+#------------
+#------------
+# test node e2l quant
+#
+#------------
+
+#---------------------
+# 策略
+#---------------------
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func show_bounds( price, css  ) {
+    deci = 2;
+
+    if (IModeSelect.bounds == 0) { 
+        return -1;
+    }
+    len = FArraySize(IBound.bid);
+    if (len < 2) {
+        return -1;
+    }
+
+
+    idx0 = len - 1;
+    idx1 = idx0 - 1;
+
+    bval0 = FArrayGet(IBound.bid, idx0);
+    bval1 = FArrayGet(IBound.bid,idx1);
+
+    r = 0.0901;
+    if (css == IOrder.long) {
+        buy_price = bval1 * ( 1 - r);
+    }else{
+        sell_price = bval1 * ( 1 + r);
+    }
+
+    if (len > 2) {
+        idx2 = idx1 - 1;
+        bval2 = FArrayGet(IBound.bid,idx2);
+
+        buy_price2 = bval2 * ( 1 + r);
+    }
+
+    return 0;
+}
+#----- func end
+
+#---------------------
+#  buy function
+#---------------------
+#--------
+# Name: Buy
+#   Parameters:
+# - price: buy price
+# -> return 
+# Description: 
+# 一手股票（英语：Lot）
+#  上海和深圳交易所均订明，不论股价，以100股为一手
+#  每手一千股（香港证券交易所）
+#--------	
+
+func Buy(price){
+    code =  CfiCode( ) ;
+    FStore(ITradeSingal.orders, 1);
+
+    formula = FFetch(ITradeLoss.analytic_price);
+
+    if ( formula <= 0 ) {
+        formula = ITradeLoss.ap_def;
+    }
+
+    balance = FAccountEquity();
+
+    order_cash = balance * formula;
+
+    if (IAccountCash.OrderPostion == 1) {
+        cash = FAccountBalance();           
+        post_cash = cash * formula;
+
+        if ( post_cash > order_cash ) {
+            post_cash = order_cash;
+        } 
+
+        order_cash = post_cash;
+    }
+
+    if (order_cash <= 0) {
+        FStore(ITradeSingal.orders, 0);
+        return -1;
+    } 
+
+    ls = FCurrentLS();
+
+
+    _nqty = ( order_cash / price)  / ls;
+
+    _nqty = FFloor(_nqty);
+
+    if(_nqty <= 0){
+        FStore(ITradeSingal.orders, 0);
+
+        return -1;
+    }
+
+    FStore(IAnalseLogType.oid, formula);
+
+    _nslippage = 0;
+
+# long or short
+    cmd = USide.Os_Buy;
+
+    ot =  UOrdType.Ot_Market; 
+
+    FOrderSend(code , cmd, _nqty, price,  _nslippage, ot);
+
+    return 0;
+}
+#----- func end
+
+
+#--------
+# Name:function
+#   Parameters:
+# - price: sell price
+# - ticket:  订单号
+# -> return 
+# Description: 
+#  
+#--------	
+func Short(price, ticket, lots){
+
+    _nslippage = 0;
+
+    b = FOrderClose(ticket, lots, price, _nslippage);
+    if (b == UBool.B_TRUE) {
+
+        FStore(ITradeSingal.orders, 0);           
+        formula = FFetch(IAnalseLogType.oid);
+
+        ReportFormula(ticket, formula) ; 
+    }
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func Sell(ticket, price, flag) {
+    if( ticket  == 0 ){
+        return 1;
+    }
+
+    if(ticket > 0){
+        lots = FOrderLots(ticket);
+        if ( lots < 1) {
+            return 2;       
+        }
+        Short(price, ticket, lots );
+        side = USide.Os_Sell; 
+        FOrderComment(ticket, side, flag);
+
+        FStore(ITradeLoss.stop_loss, 0);
+        return 2;
+    }
+
+    return 0;
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func CurrentTicket() {
+    trade_num = FOrdersTotal();
+
+    ticket = 0;
+    if (trade_num == 0) {
+        ticket = -1;
+    }
+    for(i=0; i<trade_num; i++){
+
+        b = FOrderSelect(i, USelectFlag.F_ByPos, USelectFlag.P_Trade);      
+
+        if(b==UBool.B_TRUE){
+            ticket = FOrderTicket();
+            return ticket;
+        }        
+    }
+
+    return ticket;
+}
+#----- func end
+
+
+

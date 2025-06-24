@@ -1,0 +1,142 @@
+import <Physical/ModeGuide/ThreadProcess.e2>
+import <Physical/Mode/ModeMa.e2>
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func BtcUsdtEvent(thread_id, now_close, event) {
+    number = FArrayGet(IModeTread.thread_num_id , 0);
+
+    if (number == 0) {            
+        return -1;
+    }
+    ma_fast = 0;
+    ma_slow = 0;
+
+    ins_fast = 30;
+    ins_slow = 60;
+
+    if(IModeTread.random == 2) {
+        ma_fast = 8;
+        ma_slow = 17;
+
+    }
+
+    if(event == 0){
+# ma mode
+        ma_name = "mode_btc_usdt";
+
+        FAnalse( AnalseId.arg_id, ma_name);
+        FAnalseArgv(AnalseId.arg_id, ma_fast);
+        FAnalseArgv(AnalseId.arg_id, ma_slow);
+        FAnalseArgv(AnalseId.arg_id, ins_fast);
+        FAnalseArgv(AnalseId.arg_id, ins_slow);
+        FAnalseDB(); 
+    }else{
+        deci = 3;
+# long 的时候是一个小值，short 的时候，是一个大值
+        ret_val = ModeMA(ma_fast, ma_slow , now_close);
+
+        Inspect(ins_fast, ins_slow, now_close) ;
+
+        trades = FOrdersTotal();
+
+        if (trades > 0) {
+            fast_val = FArrayGet(IModeSelect.ma_inspect, 0);        
+            slow_val = FArrayGet(IModeSelect.ma_inspect, 1);        
+
+            if ( slow_val >= ret_val  ) {
+                FStore(ITradeLoss.loss_id, ITradeLoss.loss_min);
+            }else{
+
+                FStore(ITradeLoss.loss_id, ITradeLoss.loss_max);       
+            }
+
+        }
+
+    }
+
+    return 0;
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func btc_usdt(tick_size, thread_id) {
+    pid = IModeSelect.ma;
+
+    if (IProcessMode.only != 0) {
+        pid = FProcessId();
+    }
+
+    mod_id =  MaArgInit(); 
+    step = IModeSelect.ma_step;
+    ext_data = UBool.B_FALSE;
+
+    InitTFrame(tick_size);
+
+    isOk = ProcessInitData( pid, mod_id, step, ext_data) ;
+    if (isOk == UBool.B_TRUE) {
+        tframe = CurrentTFrame() ;
+        code =  CfiCode() ; 
+        now_close = FClose(code , tframe, 0);
+        pre_close = FClose(code , tframe, 1);
+
+        if (pre_close == 0) {
+            break;
+        }
+
+        days = 55;
+        AnalyticPricing(now_close,days) ;
+
+        css = FFetch(ITradeSingal.id);
+
+        lr = LongRisk(css, now_close, pre_close, 1);
+
+        if(lr == UBool.B_TRUE){            
+            loss = IModeSelect.ma_loss;
+
+            ret = PTrade(css, now_close, now_close, loss, 1 ); 
+        }
+
+        BtcUsdtEvent(thread_id, now_close, 1);
+        if (IModeSelect.bounds == 1) {
+            Bounds(now_close) ;               
+        }
+
+
+        deci = 3;
+        unix = 1735197900;
+        time = FTime(code , tframe, 0);
+        if(time > unix){
+            stat = FArrayGet(IBarStatus.id, 0);
+            FPrintTime(time);
+            FPrintDeci(now_close,deci);   
+            if(stat != UBool.B_FALSE){                
+
+                FPrintDeci(pre_close,deci);   
+            }
+        }
+
+    }
+
+    if(tick_size==1){
+        BtcUsdtEvent(thread_id, 0, 0);
+    }
+}
+#----- func end
+
+btc_usdt(__arg0, __arg1);

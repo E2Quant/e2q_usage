@@ -1,0 +1,125 @@
+
+#--------
+# Name:ModeMA
+#   Parameters:
+# - fast: fast period
+# - slow: slow period
+# - value: ma value 
+# -> return 
+# Description: 
+#  
+#--------	
+func ModeMA(fast, slow , value ){
+
+    _fast_id = MA(fast, value);
+    _slow_id = MA(slow, value);
+
+    _ret = FArrayGet(_slow_id, 0); 
+
+    _fast = 0;
+    _slow = 0 ;
+
+    if(_ret > 0){
+        _fast = FArrayGet(_fast_id, 1);
+        _slow = FArrayGet(_slow_id, 1); 
+    }
+    
+    css = Cross(_fast, _slow);
+    
+    FStore(ITradeSingal.id, css);
+
+    return _fast;
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func Inspect(fast, slow, value) {
+    id = IModeSelect.ma_inspect;
+    FArray(id, IModeSelect.ma_size);
+    FArrayFixed(id);
+
+    _fast_id = MA(fast, value);
+    _slow_id = MA(slow, value);
+
+    _ret = FArrayGet(_fast_id, 0); 
+    deci = 3;
+    if(_ret > 0){
+        fast_v = FArrayGet(_fast_id,1); 
+        
+
+        FArrayUpdate(id, 0, fast_v);        
+    }else{
+        FArrayUpdate(id, 0, 0);        
+    }
+
+    _ret = FArrayGet(_slow_id, 0); 
+
+    if(_ret > 0){
+        slow_v = FArrayGet(_slow_id, 1); 
+
+        FArrayUpdate(id, 1, slow_v);
+    }else{
+        FArrayUpdate(id, 1, 0);        
+    }
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func MaArgInit() {
+    length = 2;
+    pid = 0;
+
+    if (IProcessMode.only == 0) {
+        pid = FProcessId();           
+    }
+
+    run = FProcessRuns();
+
+    base = Ima.ma_fast  + pid * IModeSelect.ma_step + run ;
+    fast = base;
+    slow = fast + IModeSelect.ma_step;
+
+    if (IModeTread.random == 0) {
+
+        if(run > 0 ){         
+            base = base + pid + (IThreadNum.thread_num - 1) * IModeSelect.ma_step + 1;
+        }
+
+        fast = base + pid ;    
+
+        number = run * fast;
+
+        slow = Ima.ma_slow + pid  ;
+        if (fast >= slow) {
+            slow = fast + length * 2 ;
+        }
+        offset =  IThreadNum.thread_num + number;
+        if (pid > 0) {
+            slow = slow + offset;
+        }     
+    }
+    arg_id = FStoreId();
+    FArray(arg_id, length);
+    FArrayFixed(arg_id);
+
+    FArrayUpdate(arg_id, 0, fast);
+    FArrayUpdate(arg_id, 1, slow);
+    return arg_id; 
+}
+#----- func end

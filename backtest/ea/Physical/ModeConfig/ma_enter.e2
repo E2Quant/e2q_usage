@@ -1,0 +1,171 @@
+import <Physical/ModeGuide/ThreadProcess.e2>
+import <Physical/Mode/ModeMa.e2>
+
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func MaPEvent(thread_id, now_close, event) {
+    number = FArrayGet(IModeTread.thread_num_id , 0);
+
+    if (number == 0) {            
+        return -1;
+    }
+    ma_fast = 0;
+    ma_slow = 0;
+
+    ins_fast = 30;
+    ins_slow = 60;
+
+    start = thread_id * number;   
+    idx = 1;
+    offset = 1;
+
+    if (IModeTread.random == 0) {
+
+        idx = start + offset;
+        ma_fast = FArrayGet(IModeTread.thread_num_id , idx);
+
+        idx = idx + offset;
+        ma_slow = FArrayGet(IModeTread.thread_num_id , idx);
+    }
+
+    if(IModeTread.random == 1) {
+        size =  FArraySize(IModeTread.thread_num_id);
+        offset = FProcessRuns();
+        offset = offset % 2;
+        fidx = offset + 1;
+        if (fidx > size) {
+            fidx = 1;
+        }
+        ma_fast = FArrayGet(IModeTread.thread_num_id , fidx);
+
+        sidx = thread_id + 3 + offset; 
+
+        if (sidx > size) {
+            sidx = size - 1;
+        }
+
+        ma_slow = FArrayGet(IModeTread.thread_num_id , sidx);
+    }
+
+
+# 暂定
+    if(IModeTread.random == 2) {
+#    ma_fast = 8 + thread_id * 2;
+#    ma_slow = 20 + thread_id * 6;
+        if ( thread_id == 4 ) {
+            ma_fast = 30;
+            ma_slow = 90;       
+        }else{
+            ma_fast = 8;
+            ma_slow = 17;
+        }
+    }
+
+    if(event == 0){
+        ma_name = "mode_m";
+
+        ana_id = AnalseId.arg_id + FProcessId();
+        FAnalse(ana_id, ma_name);
+        FAnalseArgv(ana_id, ma_fast);
+        FAnalseArgv(ana_id, ma_slow);
+        FAnalseArgv(ana_id, ins_fast);
+        FAnalseArgv(ana_id, ins_slow);
+        FAnalseDB(); 
+    }else{
+        deci = 3;
+# long 的时候是一个小值，short 的时候，是一个大值
+        ret_val = ModeMA(ma_fast, ma_slow , now_close);
+
+        Inspect(ins_fast, ins_slow, now_close) ;
+
+        trades = FOrdersTotal();
+
+        if (trades > 0) {
+            fast_val = FArrayGet(IModeSelect.ma_inspect, 0);        
+            slow_val = FArrayGet(IModeSelect.ma_inspect, 1);        
+
+            if ( slow_val >= ret_val  ) {
+                FStore(ITradeLoss.loss_id, ITradeLoss.loss_min);
+            }else{
+
+                FStore(ITradeLoss.loss_id, ITradeLoss.loss_max);       
+
+            }
+
+        }
+
+    }
+    return 0;
+}
+#----- func end
+
+
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func ma_enter(tick_size, thread_id) {
+
+    pid = IModeSelect.ma;
+
+    if (IProcessMode.only != 0) {
+        pid = FProcessId();
+    }
+
+
+    mod_id =  MaArgInit(); 
+    step = IModeSelect.ma_step;
+    ext_data = UBool.B_FALSE;
+
+    isOk = ProcessInitData( pid, mod_id, step, ext_data) ;
+    if (isOk == UBool.B_TRUE) {
+        code = CfiCode() ; 
+
+        timeframe =  CurrentTFrame() ;
+        now_close = FClose(code ,timeframe , 0);
+
+        adj_close = FAdjClose(code ,timeframe , 0);
+        adj_close_p = FAdjClose(code , timeframe, 1);
+
+        if (now_close <= 0) {
+            break;
+        }
+
+        ShowDayInfo();   
+ 
+        css = FFetch(ITradeSingal.id);
+   
+        FStore(ITradeLoss.loss_id, ITradeLoss.back_profit);
+
+        ret = PTrade(css, now_close );
+
+        MaPEvent(thread_id,  adj_close, 1);
+    }
+
+    if(tick_size==1){
+        MaPEvent(thread_id, 0,0);
+
+    }
+
+#    end_time = FClock(); 
+#    diff = end_time - start_time;
+
+}
+#----- func end
+
+
+

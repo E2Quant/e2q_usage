@@ -1,0 +1,71 @@
+#------------
+#
+# broker e2l 
+#
+#------------
+
+#--------
+# Name: union
+# Description: 
+#  模拟交易的时候，进程从这个时间才开始交易
+#--------	
+union OnLineMarket {
+    id = 101090;	
+    size = 1;
+}
+#----- union end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func OnLineTime() {
+    lnow = FTimeLocal();   
+
+    value = FFetch(OnLineMarket.id);
+    if (value == -1) {
+        FStore(OnLineMarket.id, lnow);           
+    }
+
+    return value;
+
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  开始交易的时间设置，回测可以随时，当正式交易的时候，是当前时间之后 
+#--------	
+func OrderStart() {
+    tnow = FTimeCurrent(); 
+    lnow = OnLineTime(); 
+
+    os = 0;
+    if (tnow < lnow) {
+        os = -1;
+    }
+
+    return os;
+}
+#----- func end
+
+#---------------------
+# broker 风险控制，返回 0 无风险，可以正常交易，-1 有风险不交易
+#---------------------
+func risk( cficode ){
+    _noid = 0;
+    # _noid = OrderStart();
+
+    return _noid;
+}
+

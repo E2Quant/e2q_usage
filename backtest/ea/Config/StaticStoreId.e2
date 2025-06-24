@@ -1,0 +1,268 @@
+#---------------------
+# script static store id in here
+#
+# 100001 - 100010 余留使用  
+#---------------------
+
+#--------
+# Name:IBarStatus 
+# Description: 
+# B_FALSE updating , B_TRUE bar  
+# 记录 bar 状态  
+# idx = 2 == UTimeFrames.Period_M 
+#--------	
+
+union IBarStatus{
+    id = 100011;  
+    size=3;
+}
+#----- union end
+
+
+#--------
+# Name: TradeSingal
+# Description: 
+#  orders buy and selle 是不是可以多订单的 
+#  Cross 类型函数使用的 交易信号的 id
+#--------
+
+union ITradeSingal{
+    orders = 100012;
+
+    id = 100013;      
+}
+#----- union end
+
+
+#--------
+# Name:PhyIds  
+# Description: 
+#  
+#  初始化 pdata 的数组
+#--------
+union IPhyIds{
+    data_id = 100014; 
+    data_size = 2;      
+}
+#----- union end
+
+#--------
+# Name: ModeTread 
+# Description: 
+#  不同线程跑的参数
+#  保存不同线程跑标标参数的 id
+#   random = 乱or顺 序  0 , 1
+#   random = 2 手工设置 
+#--------
+union IModeTread{
+    thread_num_id = 100015;  
+    random = 2;
+}
+#----- union end
+
+#--------
+# Name: AnalseId
+# Description: 
+# 记录指标数据的 id
+# 主要是记录参数的
+#  100016 - 101010
+#--------	
+union AnalseId{
+    arg_id = 100016;
+}
+#----- union end
+
+
+#--------
+# Name: IProcessMode
+# Description: 
+# 进程 id 是0 的时候， 从 init_val 开始选择
+# 目前选择 ma
+#  only == 0 单个模型
+#  only == 1 多个模型  
+#--------	
+union IProcessMode {
+    init_val = 101011;
+    only = 1;
+}
+#----- union end
+
+#--------
+# Name: ITradeLoss 
+# Description: 
+#  是否止损 
+# limit 保存极限价格
+# 这儿的值是用在 AutoLoss 这儿的 
+# - loss_min loss_max 止损点
+# - back_profit 止赢
+# - risk_price 2 = high
+# - risk_price 3 = low
+# - risk_bar_length_high 4 
+# - risk_bar_length_low 5
+#--------	 
+union ITradeLoss {
+    stop_loss = 101012;
+    loss_id =  101013;
+    loss_min = -0.0145;
+    loss_max = -0.0618;
+
+    take_profit = 101014;
+# back_profit = -0.061;
+    back_profit = -0.0901;
+
+    limit = 101015;
+
+    analytic_price = 101016; 
+#ap_def = 0.68;
+    ap_def = 0.9;
+
+    risk = 101017;
+    risk_size = 6;
+    risk_run = 0;
+    risk_change = 1;
+    risk_price = 2;
+
+    risk_min_max = 101018;
+    risk_mm = 4;
+}
+#----- union end
+
+#--------
+# Name: LatelyId
+# Description: 
+#  记录最近三个最大最小值 
+#--------	
+union ILatelyId {
+    min = 101026;	
+    min_size = 4;
+
+    max = 101027;
+    max_size = 4;
+}
+#----- union end
+
+#--------
+# Name: IModeSelect
+# Description: 
+#  - ma ind
+#  - inspect 检查一下当前上升还是下降，主要是 ma30 -> ma60
+#  - macd  1, 2, 3
+#  - boll_macd_id  处理在 boll 中的 macd 参数
+#  选择不同的 indicator
+#  - bounds == 1 的话，决定采用 bounds 来计算是不是开平仓
+#--------	
+union IModeSelect {
+    ma = 0;
+    ma_step = 5;
+    ma_loss = 1;
+    ma_inspect = 101030;
+    ma_size = 2;
+
+   
+
+    macd = 4;
+    macd_step = 1; 
+    macd_loss = 1;
+
+
+  
+
+    bounds = 0; 
+}
+#----- union end
+
+#--------
+# Name: IBound
+# Description: 
+# - size 保存多长的记录
+# - fib  fibonacci 的值
+#  上下极值的记录 
+#--------	
+union IBound {
+    bid = 101049;	
+    size = 6;
+    fib = 8;
+}
+#----- union end
+
+#--------
+# Name: union
+# Description: 
+#  除权记录 
+#--------	
+union IExdi {
+    id = 101050;	
+}
+#----- union end
+
+#--------
+# Name: union
+# Description: 
+#  
+#--------	
+union IHeikin {
+    id = 101061;	
+    size = 8;
+
+    open = 0;
+    low = 1;
+    high = 2;
+    close = 3;
+}
+#----- union end
+
+
+#--------
+# Name: union
+# Description: 
+#  FanalseLog type
+# - account_balance 账户资金
+# - order_formula order 比例 
+# - oid buy store formula 仓位比例 
+# - tdisave 使用
+#--------	
+union IAnalseLogType {
+
+    tdi_log = 1;	
+
+    oid = 101071;	
+    order_formula = 2;
+
+    adj_price = 3;
+}
+#----- union end
+
+
+#--------
+# Name: union
+# Description: 
+#  Define Custom bar
+#--------	
+union IDefineBar {
+    id = 101081;	
+    size = 8;
+
+    open = 0;
+    low = 1;
+    high = 2;
+    close = 3;
+}
+#----- union end
+
+
+#--------
+# Name: union
+# Description: 
+#  # cficode = 179591; # start
+#--------	
+union ISymbols { 
+#  sh000001=0;
+    index = 0; 
+   
+    # save fcficode idx value
+    id = 101090;  
+}
+#----- union end
+
+
+

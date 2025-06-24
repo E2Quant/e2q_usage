@@ -1,0 +1,65 @@
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func ESConfig(tick_size, thread_id) {
+#    tf = UTimeFrames.Period_M15;
+#    tf = UTimeFrames.Period_D1;
+#   tf = UTimeFrames.Period_M;
+#  tf = UTimeFrames.Period_M30;
+#tf = UTimeFrames.Period_H1;
+
+    tf = UTimeFrames.Period_D1;
+    InitTFrame(tick_size, tf);
+
+    idx = thread_id + 1;
+
+    FStore(ISymbols.id, idx);
+}
+#----- func end
+
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func ReportRiskData(cficode, value) {
+    vtype = IAnalseLogTypeExt.risk;
+
+    ReportAnaly( value, vtype, cficode ); 
+}
+#----- func end
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  
+#--------	
+func ReportPortfolio(ear, av, sr) {
+    ear_type = IAnalseLogTypeExt.Expected_annual_return;
+    ReportAnaly( ear, ear_type, 0 );
+
+    av_type = IAnalseLogTypeExt.Annual_volatility;
+    ReportAnaly( av, av_type, 0 );
+
+    sr_type = IAnalseLogTypeExt.Sharpe_Ratio;
+    ReportAnaly( sr, sr_type, 0 );
+
+}
+#----- func end
+
+

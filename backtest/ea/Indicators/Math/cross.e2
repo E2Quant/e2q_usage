@@ -1,0 +1,62 @@
+#---------------------
+#  math function list
+#---------------------
+#---------------------
+#  Cross function
+#  crossover = if(input1 > input2 and input1(-1) <= input2(-1) )  return 1 
+#              else return 0 
+#---------------------
+func Cross(input1, input2){
+    size = 8;
+    _input_id = FStoreId(); 
+    FArray(_input_id, size);
+
+    stat = FArrayGet(IBarStatus.id, 0);
+
+    if(stat != UBool.B_FALSE){ 
+        FArrayAdd(_input_id, 0); 
+        FArrayAdd(_input_id, 0); 
+    }
+
+    _old_input0 = FArrayGet(_input_id, 0);
+    _old_input1 = FArrayGet(_input_id, 1);
+
+    _old_input2 = FArrayGet(_input_id, 2);
+    _old_input3 = FArrayGet(_input_id, 3);
+
+    _old_input4 = FArrayGet(_input_id, 4);
+    _old_input5 = FArrayGet(_input_id, 5);
+
+    FArrayUpdate(_input_id, 6, input1);
+    FArrayUpdate(_input_id, 7, input2);
+
+    if(_old_input5 <= 0 ){
+        return IOrder.pass;
+    }
+
+    check_long0 = (_old_input1 < input1 ) || (_old_input1 > input2);
+    check_long1 = (_old_input0 < _old_input1) && (input1 > input2);
+    check_long = (check_long1 > 0 ) && (check_long0 > 0);
+
+    if( check_long ){        
+
+        trades = FOrdersTotal();           
+
+        if (trades > 0) {
+            break;    
+        } 
+        return IOrder.long;        
+    }
+
+    check_short0 = (_old_input0 > input1 ) || (_old_input0 < input2);
+    check_short1 = (_old_input0 > _old_input1 ) && (input1 < input2);
+    check_short = (check_short1 > 0) && (check_short0 >0);
+    if( check_short ){
+
+        return IOrder.short;        
+    }
+
+    return IOrder.pass;
+}
+
+

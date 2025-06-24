@@ -1,0 +1,28 @@
+import <Enter/Single/Parts/StaticES.e2>
+
+import <Physical/ModeConfig/ma_enter.e2> 
+
+import <Enter/Single/Parts/StaticFun.e2>
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  单个个股，单个线程 
+#--------	
+func ma_es( tick_size, thread_id ) {
+
+    ESConfig(tick_size, thread_id);
+
+    ma_enter(tick_size, thread_id);   
+}
+#----- func end
+
+#----
+#  mail call enter
+#----
+
+ma_es(__arg0, __arg1);

@@ -1,0 +1,88 @@
+#------------
+#
+#  oms e2l quant
+#  backtest
+#------------
+
+import <exchange.e2>
+import <broker.e2>
+
+#--------
+# Name:function
+#   Parameters:
+# - arg1: xxx
+# - arg2: xxx
+# -> return 
+# Description: 
+#  目前采用通达信的方式来计算 
+#  先这样，以后再优化 
+#--------	
+func hfq( cfi_code ) {
+    deci = 4; 
+    hprice = FExDivPrice(cfi_code);
+    if ( hprice == 0 ) {
+        FPrintDeci(hprice,deci);
+        return 0;
+    }
+    size = FExDividendSize(cfi_code);
+    if (size == 0) {
+        FPrintDeci(size,deci);
+        return 0;
+    }
+    idx_init = size - 1;
+    all_share = 0;
+
+    for (idx = idx_init;idx>=0;idx--) {
+
+        cash = FExDividendCash(cfi_code,idx);
+        share = FExDividendShare(cfi_code,idx);
+
+        if(share > 0){
+
+            hprice += share * hprice + cash;
+        }else{
+            hprice += cash;
+        }
+    }
+
+    if (hprice < 0) {
+        echo(hprice);  
+    }
+    return hprice; 
+}
+#----- func end
+#---------------------
+# script main
+#---------------------
+func start( arg0, arg1 ){
+    _nscript=FIsInit();
+    bid = 1;
+    _ret = -1;
+    if(_nscript == UInitOk.I_Proc ){  
+        config();  
+#定义 bot
+        FGiveaway();
+        return _ret;
+    }
+
+
+    if (arg0 == UOMSRisk.I_OMS) {
+        _ret = hfq(arg1);
+
+    }else{
+# 这儿也要区别不同的cfi code 才行的
+        _ret = risk(arg1);
+
+    }
+
+    return _ret;
+}
+#-------------------
+# script oms start
+#-------------------
+
+#__arg0 ask or sell
+#__arg1 bid or buy
+
+ret = start(__arg0,__arg1);
+
